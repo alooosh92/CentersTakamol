@@ -16,7 +16,7 @@ namespace CentersTakamol.Controller
             var smtpPort = 465;
             //
             var username = "alaa.baaj@takamol.me";
-            var password = "bj@23T@k";
+            var password = "password";
             var message = new MimeMessage();
             //
             var supervisor = Values.ListRegionSupervisor;
