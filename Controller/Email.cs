@@ -127,6 +127,10 @@ namespace CentersTakamol.Controller
             <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">السبب</p></td>            
         </tr>
         {DemegReceipt(receipt.DamagedReceiptList!)}
+        <tr>
+            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack,pMulteLine"">ملاحظات</p></td>
+            <td colspan=""2"" class=""tdWhite""><p class=""textBlack,pMulteLine"">{receipt.Notes}</p></td>            
+        </tr>
     </table>
 <br>
 ";
