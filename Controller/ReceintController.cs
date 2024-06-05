@@ -372,6 +372,8 @@ namespace CentersTakamol
             string family = "";
             string vecation = "";
             string damaged = "";
+            int min = 0;
+            int max = 0;
             foreach (var item in receipt.FamilyReceiptList!)
             {
                 family += $"{item} /";
@@ -396,8 +398,19 @@ namespace CentersTakamol
             {
                 damaged = "لا يوجد ايصالات  ";
             }
+            if(receipt.FamilyReceiptList.Min()< receipt.VactionReceiptList.Min())
+            {
+                min = receipt.FamilyReceiptList.Min();
+            }
+            else { min =  receipt.VactionReceiptList.Min(); }
+            if (receipt.FamilyReceiptList.Max() > receipt.VactionReceiptList.Max())
+            {
+                max = receipt.FamilyReceiptList.Max();
+            }
+            else { max = receipt.VactionReceiptList.Max(); }
             booksInfo += $"\n" +
             $"دفتر الايصالات رقم: {receipt.FirstReceipt} - {receipt.LastReceipt}\n" +
+            $"الأرقام المولدة من بروفر: من الرقم {min} إلى الرقم {max}\n" +
             $"عدد الايصالات العائلية: {receipt.FamilyReceiptNum}\n" +
             $"عدد الايصالات المركبة: {receipt.VecationReceiptNum}\n" +
             $"عدد الايصالات التالفة: {receipt.DamagedReceiptNum}\n" +
