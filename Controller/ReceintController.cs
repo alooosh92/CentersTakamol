@@ -403,16 +403,6 @@ namespace CentersTakamol
             list.AddRange(receipt.FamilyReceiptList);
             min = list.Min();
             max = list.Max();
-            /* if(receipt.FamilyReceiptList.Min()< receipt.VactionReceiptList.Min())
-             {
-                 min = receipt.FamilyReceiptList.Min();
-             }
-             else { min =  receipt.VactionReceiptList.Min(); }
-             if (receipt.FamilyReceiptList.Max() > receipt.VactionReceiptList.Max())
-             {
-                 max = receipt.FamilyReceiptList.Max();
-             }
-             else { max = receipt.VactionReceiptList.Max(); }*/
             booksInfo += $"\n" +
             $"دفتر الايصالات رقم: {receipt.FirstReceipt} - {receipt.LastReceipt}\n" +
             $"الأرقام المولدة من بروفر: من الرقم {min} إلى الرقم {max}\n" +
