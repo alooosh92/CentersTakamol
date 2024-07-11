@@ -398,16 +398,21 @@ namespace CentersTakamol
             {
                 damaged = "لا يوجد ايصالات  ";
             }
-            if(receipt.FamilyReceiptList.Min()< receipt.VactionReceiptList.Min())
-            {
-                min = receipt.FamilyReceiptList.Min();
-            }
-            else { min =  receipt.VactionReceiptList.Min(); }
-            if (receipt.FamilyReceiptList.Max() > receipt.VactionReceiptList.Max())
-            {
-                max = receipt.FamilyReceiptList.Max();
-            }
-            else { max = receipt.VactionReceiptList.Max(); }
+            List<int> list = new List<int>();
+            list.AddRange(receipt.VactionReceiptList);
+            list.AddRange(receipt.FamilyReceiptList);
+            min = list.Min();
+            max = list.Max();
+            /* if(receipt.FamilyReceiptList.Min()< receipt.VactionReceiptList.Min())
+             {
+                 min = receipt.FamilyReceiptList.Min();
+             }
+             else { min =  receipt.VactionReceiptList.Min(); }
+             if (receipt.FamilyReceiptList.Max() > receipt.VactionReceiptList.Max())
+             {
+                 max = receipt.FamilyReceiptList.Max();
+             }
+             else { max = receipt.VactionReceiptList.Max(); }*/
             booksInfo += $"\n" +
             $"دفتر الايصالات رقم: {receipt.FirstReceipt} - {receipt.LastReceipt}\n" +
             $"الأرقام المولدة من بروفر: من الرقم {min} إلى الرقم {max}\n" +
@@ -572,6 +577,13 @@ namespace CentersTakamol
                                 text: "الرجاء ادخال الأرقام الايصالات التالفة على الشكل: XXX,XXX,XXX,...",
                                 cancellationToken: cancellationToken);
                                 receipt.Count += 3;
+                            }else
+                            {
+                                await TelegramBotClient.SendTextMessageAsync(
+                                chatId: chatId,
+                                text: "الرجاء كتاب الملاحظات ان وجدت او كتابة لا يوجد",
+                                cancellationToken: cancellationToken);
+                                receipt.Count += 4;
                             }
 
                         }
@@ -612,6 +624,14 @@ namespace CentersTakamol
                                 text: "الرجاء ادخال الأرقام الابصالات التالفة على الشكل: XXX,XXX,XXX,...",
                                 cancellationToken: cancellationToken);
                                 receipt.Count += 2;
+                            }
+                            else
+                            {
+                                await TelegramBotClient.SendTextMessageAsync(
+                                chatId: chatId,
+                                text: "الرجاء كتاب الملاحظات ان وجدت او كتابة لا يوجد",
+                                cancellationToken: cancellationToken);
+                                receipt.Count += 3;
                             }
                         }
                         break;
