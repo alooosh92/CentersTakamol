@@ -16,22 +16,22 @@ namespace CentersTakamol.Controller
             var smtpPort = 465;
             //
             var username = "alaa.baaj@takamol.me";
-            var password = "password";
+            var password = "bj@23T@k";
             var message = new MimeMessage();
             //
             var supervisor = Values.ListRegionSupervisor;
             message.From.Add(new MailboxAddress("Alaa Baaj", "alaa.baaj@takamol.me"));
-             message.To.Add(new MailboxAddress("Bothaina Aljaramani", "bothaina.aljaramani@takamol.me"));
-              message.Cc.Add(new MailboxAddress("MHD Khaldoun Adde", "mhd.khaldoun.adde@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Sarah Naim", "sarah.naim@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Khaled Sahli", "khaled.sahli@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Financial Controller", "financial.controller@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Alaa Khalil", "alaa.khalil@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Joul Alyan", "joul.alyan@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Safwan Azhari", "safwan.azhari@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Mouhammad Fadel", "mouhammad.fadel@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Salam Aldeghli", "salam.aldeghli@takamol.me"));
-              message.Cc.Add(new MailboxAddress("Zubaida Fakhany", "zubaida.fakhany@takamol.me"));
+            message.To.Add(new MailboxAddress("Bothaina Aljaramani", "bothaina.aljaramani@takamol.me"));
+            message.Cc.Add(new MailboxAddress("MHD Khaldoun Adde", "mhd.khaldoun.adde@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Sarah Naim", "sarah.naim@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Khaled Sahli", "khaled.sahli@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Financial Controller", "financial.controller@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Alaa Khalil", "alaa.khalil@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Joul Alyan", "joul.alyan@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Safwan Azhari", "safwan.azhari@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Mouhammad Fadel", "mouhammad.fadel@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Salam Aldeghli", "salam.aldeghli@takamol.me"));
+            message.Cc.Add(new MailboxAddress("Zubaida Fakhany", "zubaida.fakhany@takamol.me"));
             message.Cc.Add(supervisor.Where(a=>a.Region == book.Receipts!.First().Region).First().Supervisor);            
             message.Subject = $"تفاصيل دفاتر ايصالات - {book.Receipts!.First().Region}";
             var attachment = new MimePart("Image", book.ImageName!.Split(".").Last())
@@ -87,7 +87,7 @@ namespace CentersTakamol.Controller
             <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">جديد</p></td>            
         </tr>
         <tr>
-            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">رقم الدفتر</p></td>
+            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">نطاق الايصالات</p></td>
             <td colspan=""2"" class=""tdWhite""><p class=""textBlack"">{receipt.FirstReceipt} - {receipt.LastReceipt}</p></td>             
         </tr>
         <tr>
@@ -101,11 +101,18 @@ namespace CentersTakamol.Controller
             <td class=""tdLaityGray""><p class=""textBlack"">{Values.FamilyPrice}</p></td> 
             <td class=""tdWhite""><p class=""textBlack"">{receipt.FamilyReceiptNum}</p></td> 
             <td class=""tdWhite""><p class=""textBlack"">{receipt.FamilyReceiptNum * Values.FamilyPrice}</p></td>            
-        </tr><tr>
+        </tr>
+        <tr>
             <td class=""tdLaityGray""><p class=""textBlack"">مركبة</p></td>
             <td class=""tdLaityGray""><p class=""textBlack"">{Values.VactionPrice}</p></td>
             <td class=""tdWhite""><p class=""textBlack"">{receipt.VecationReceiptNum}</p></td> 
             <td class=""tdWhite""><p class=""textBlack"">{receipt.VecationReceiptNum * Values.VactionPrice}</p></td>            
+        </tr>
+        <tr>
+            <td class=""tdLaityGray""><p class=""textBlack"">مركبة</p></td>
+            <td class=""tdLaityGray""><p class=""textBlack"">{Values.VactionPrice}</p></td>
+            <td class=""tdWhite""><p class=""textBlack"">{receipt.DamagedReceiptNum}</p></td> 
+            <td class=""tdWhite""><p class=""textBlack"">0</p></td>            
         </tr>
         <tr>
             <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">اجمالي الكل</p></td>
@@ -119,14 +126,10 @@ namespace CentersTakamol.Controller
             <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack,pMulteLine"">ايصالات مركبة</p></td>
             <td colspan=""2"" class=""tdWhite""><p class=""textBlack,pMulteLine"">{ReceiptToStrin(receipt.VactionReceiptList!)}</p></td>            
         </tr>
-        <tr>
-            <td colspan=""4"" class=""tdDarkGray""><p class=""textWhite"">ايصالات تالفة</p></td>         
+         <tr>
+            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack,pMulteLine"">ايصالات ملغاة</p></td>
+            <td colspan=""2"" class=""tdWhite""><p class=""textBlack,pMulteLine"">{ReceiptToStrin(receipt.DamagedReceiptList!)}</p></td>            
         </tr>
-        <tr>
-            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">رقم الوصل</p></td>
-            <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack"">السبب</p></td>            
-        </tr>
-        {DemegReceipt(receipt.DamagedReceiptList!)}
         <tr>
             <td colspan=""2"" class=""tdLaityGray""><p class=""textBlack,pMulteLine"">ملاحظات</p></td>
             <td colspan=""2"" class=""tdWhite""><p class=""textBlack,pMulteLine"">{receipt.Notes}</p></td>            

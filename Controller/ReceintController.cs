@@ -94,7 +94,7 @@ namespace CentersTakamol
         private bool Receipt50(Receipt receipt)
         {
             int n = receipt.VecationReceiptNum + receipt.FamilyReceiptNum + receipt.DamagedReceiptNum;
-            if (n > 50) { return false; }
+            if (n > receipt.LastReceipt - receipt.FirstReceipt + 1) { return false; }
             return true;
         }
         private async Task<bool> IsRemittanceNumber(ChatId chatId, string RemittanceNumber, CancellationToken cancellationToken)
@@ -109,7 +109,7 @@ namespace CentersTakamol
             }
             return true;
         }
-        private async Task<List<int>> ListReceiptNumber(ChatId chatId, string text, int? itemNumber, CancellationToken cancellationToken)
+        private async Task<List<int>> ListReceiptNumber(ChatId chatId, string text,Receipt receipt, int? itemNumber, CancellationToken cancellationToken)
         {
             if (itemNumber != null && itemNumber > 1)
             {
@@ -132,7 +132,16 @@ namespace CentersTakamol
                             int nu = int.Parse(i);
                             if (!ret.Contains(nu))
                             {
-                                ret.Add(nu);
+                                if (nu >= receipt.FirstReceipt && nu <= receipt.LastReceipt)
+                                {
+                                    ret.Add(nu);
+                                }
+                                else {
+                                    await TelegramBotClient.SendTextMessageAsync(
+                                chatId: chatId,
+                                text: $"رقم الايصال {nu} خارج النطاق",
+                                cancellationToken: cancellationToken);
+                                }
                             }
                             else
                             {
@@ -218,16 +227,16 @@ namespace CentersTakamol
                     damaged = "لا يوجد ايصالات";
                 }
                 booksInfo += $"\n" +
-            $"دفتر الايصالات رقم: {Rec.FirstReceipt} - {Rec.LastReceipt}\n" +
+            $"نطاق الايصالات: {Rec.FirstReceipt} - {Rec.LastReceipt}\n" +
             $"عدد الايصالات العائلية: {Rec.FamilyReceiptNum}\n" +
             $"عدد الايصالات المركبة: {Rec.VecationReceiptNum}\n" +
-            $"عدد الايصالات التالفة: {Rec.DamagedReceiptNum}\n" +
+            $"عدد الايصالات الملغاة: {Rec.DamagedReceiptNum}\n" +
             $"قيمة دفتر الايصالات: {Rec.FamilyReceiptNum * Values.FamilyPrice + Rec.VecationReceiptNum * Values.VactionPrice}\n" +
             $"أرقام الايصالات العائلية المولدة من النظام:\n" +
             $"{family.Substring(0, family.Length - 2)}\n" +
             $"أرقام ايصالات المركبة المولدة من النظام:\n" +
             $"{vecation.Substring(0, vecation.Length - 2)}\n" +
-            $"أرقام الايصالات التالفة المولدة من النظام:\n" +
+            $"أرقام الايصالات الملغاة المولدة من النظام:\n" +
             $"{damaged.Substring(0, damaged.Length - 2)}\n" +
             $"ملاحظات: {Rec.Notes}\n";
             }
@@ -243,7 +252,7 @@ namespace CentersTakamol
         }
         private async void UplodePhoto(Update update, CancellationToken cancellationToken)
         {
-            if (SendReceipts.Any(a => a.Id == update.Message!.Chat.Id && a.Count == 5))
+            if (SendReceipts.Any(a => a.Id == update.Message!.Chat.Id && a.Count == 4))
             {
                 if (!Directory.Exists("photos")) { Directory.CreateDirectory("photos"); }
                 var book = SendReceipts.Where(a => a.Id == update.Message!.Chat.Id).First();
@@ -294,24 +303,24 @@ namespace CentersTakamol
                 {
                     CenterName = list.Where(a => a.Contains("اسم المركز: ")).FirstOrDefault()!.Split(": ").Last(),
                     Count = 0,
-                    DamagedReceiptNum = int.Parse(list.Where(a => a.Contains("عدد الايصالات التالفة: ")).FirstOrDefault()!.Split(": ").Last()),
+                    DamagedReceiptNum = int.Parse(list.Where(a => a.Contains("عدد الايصالات الملغاة: ")).FirstOrDefault()!.Split(": ").Last()),
                     FamilyReceiptNum = int.Parse(list.Where(a => a.Contains("عدد الايصالات العائلية: ")).FirstOrDefault()!.Split(": ").Last()),
                     VecationReceiptNum = int.Parse(list.Where(a => a.Contains("عدد الايصالات المركبة: ")).FirstOrDefault()!.Split(": ").Last()),
                     Id = chatId,
                     Notes = list.Where(a => a.Contains("ملاحظات: ")).FirstOrDefault()!.Split(": ").Last(),
                     Region = list.Where(a => a.Contains("المحافظة: ")).FirstOrDefault()!.Split(": ").Last(),
-                    FirstReceipt = int.Parse(list.Where(a => a.Contains("دفتر الايصالات رقم: ")).FirstOrDefault()!.Split(": ").Last().Split("-").First()),
-                    LastReceipt = int.Parse(list.Where(a => a.Contains("دفتر الايصالات رقم: ")).FirstOrDefault()!.Split(": ").Last().Split("-").Last()),
+                    FirstReceipt = int.Parse(list.Where(a => a.Contains("نطاق الايصالات: ")).FirstOrDefault()!.Split(": ").Last().Split("-").First()),
+                    LastReceipt = int.Parse(list.Where(a => a.Contains("نطاق الايصالات: ")).FirstOrDefault()!.Split(": ").Last().Split("-").Last()),
                     DamagedReceiptList = new List<int>(),
                     FamilyReceiptList = new List<int>(),
                     VactionReceiptList = new List<int>()
                 };
                 if (!list[list.IndexOf("أرقام الايصالات العائلية المولدة من النظام:") + 1].Contains("لا يوجد"))
-                { receipt.FamilyReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام الايصالات العائلية المولدة من النظام:") + 1], receipt.FamilyReceiptNum, cancellationToken); }
+                { receipt.FamilyReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام الايصالات العائلية المولدة من النظام:") + 1], receipt, receipt.FamilyReceiptNum, cancellationToken); }
                 if (!list[list.IndexOf("أرقام ايصالات المركبة المولدة من النظام:") + 1].Contains("لا يوجد"))
-                { receipt.VactionReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام ايصالات المركبة المولدة من النظام:") + 1], receipt.VecationReceiptNum, cancellationToken); }
-                if (!list[list.IndexOf("أرقام الايصالات التالفة:") + 1].Contains("لا يوجد"))
-                { receipt.DamagedReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام الايصالات التالفة:") + 1], receipt.DamagedReceiptNum, cancellationToken); }
+                { receipt.VactionReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام ايصالات المركبة المولدة من النظام:") + 1], receipt, receipt.VecationReceiptNum, cancellationToken); }
+                if (!list[list.IndexOf("أرقام الايصالات الملغاة:") + 1].Contains("لا يوجد"))
+                { receipt.DamagedReceiptList = await ListReceiptNumber(chatId, list[list.IndexOf("أرقام الايصالات الملغاة:") + 1], receipt, receipt.DamagedReceiptNum, cancellationToken); }
                 if (receipt.FamilyReceiptList.Count != receipt.FamilyReceiptNum ||
                     receipt.VactionReceiptList.Count != receipt.VecationReceiptNum ||
                     receipt.DamagedReceiptList.Count != receipt.DamagedReceiptNum)
@@ -372,8 +381,6 @@ namespace CentersTakamol
             string family = "";
             string vecation = "";
             string damaged = "";
-            int min = 0;
-            int max = 0;
             foreach (var item in receipt.FamilyReceiptList!)
             {
                 family += $"{item} /";
@@ -398,23 +405,17 @@ namespace CentersTakamol
             {
                 damaged = "لا يوجد ايصالات  ";
             }
-            List<int> list = new List<int>();
-            list.AddRange(receipt.VactionReceiptList);
-            list.AddRange(receipt.FamilyReceiptList);
-            min = list.Min();
-            max = list.Max();
             booksInfo += $"\n" +
-            $"دفتر الايصالات رقم: {receipt.FirstReceipt} - {receipt.LastReceipt}\n" +
-            $"الأرقام المولدة من بروفر: من الرقم {min} إلى الرقم {max}\n" +
+            $"نطاق الايصالات: {receipt.FirstReceipt} - {receipt.LastReceipt}\n" +
             $"عدد الايصالات العائلية: {receipt.FamilyReceiptNum}\n" +
             $"عدد الايصالات المركبة: {receipt.VecationReceiptNum}\n" +
-            $"عدد الايصالات التالفة: {receipt.DamagedReceiptNum}\n" +
+            $"عدد الايصالات الملغاة: {receipt.DamagedReceiptNum}\n" +
             $"قيمة دفتر الايصالات: {receipt.FamilyReceiptNum * Values.FamilyPrice + receipt.VecationReceiptNum * Values.VactionPrice}\n" +
             $"أرقام الايصالات العائلية المولدة من النظام:\n" +
             $"{family.Substring(0, family.Length - 2)}\n" +
             $"أرقام ايصالات المركبة المولدة من النظام:\n" +
             $"{vecation.Substring(0, vecation.Length - 2)}\n" +
-            $"أرقام الايصالات التالفة:\n" +
+            $"أرقام الايصالات الملغاة:\n" +
             $"{damaged.Substring(0, damaged.Length - 2)}\n" +
             $"ملاحظات: {receipt.Notes}\n";
 
@@ -440,7 +441,7 @@ namespace CentersTakamol
                 case 1:
                     {
                         receipt.CenterName = messageText;
-                        AddChoiceButton(chatId, "الرجاء ادخال رقم اول ايصال في دفتر الايصالات", new List<string>());
+                        AddChoiceButton(chatId, "الرجاء ادخال رقم الايصال الاول", new List<string>());
                         receipt.Count++;
                         break;
                     }
@@ -450,7 +451,7 @@ namespace CentersTakamol
                         if (receipt.FirstReceipt == null) { break; }
                         await TelegramBotClient.SendTextMessageAsync(
                             chatId: chatId,
-                            text: "الرجاء ادخال رقم اخر ايصال في دفتر الايصالات",
+                            text: "الرجاء ادخال رقم ايصال الاخير",
                             cancellationToken: cancellationToken);
                         receipt.Count++;
                         break;
@@ -459,7 +460,11 @@ namespace CentersTakamol
                     {
                         receipt.LastReceipt = await IsNumber(chatId, messageText, cancellationToken);
                         if (receipt.LastReceipt == null) { break; }
-                        if (receipt.LastReceipt - receipt.FirstReceipt == 49)
+                        await TelegramBotClient.SendTextMessageAsync(
+                            chatId: chatId,
+                            text: $"عدد الايصالات: {receipt.LastReceipt - receipt.FirstReceipt+1}",
+                            cancellationToken: cancellationToken);
+                        if (receipt.LastReceipt - receipt.FirstReceipt > 0)
                         {
                             await TelegramBotClient.SendTextMessageAsync(
                             chatId: chatId,
@@ -497,7 +502,7 @@ namespace CentersTakamol
                             receipt.DamagedReceiptNum = 0;
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "عدد الايصالات اكبر من 50 وصل الرجاء اعادة ادخال عدد الايصالات",
+                                text: "عدد الايصالات اكبر من نطاق الايصالات الرجاء اعادة ادخال عدد الايصالات",
                                 cancellationToken: cancellationToken);
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
@@ -516,7 +521,7 @@ namespace CentersTakamol
                         {
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "الرجاء ادخال عدد الايصالات التالفة",
+                                text: "الرجاء ادخال عدد الايصالات الملغاة",
                                 cancellationToken: cancellationToken);
                             receipt.Count++;
                         }
@@ -527,7 +532,7 @@ namespace CentersTakamol
                             receipt.DamagedReceiptNum = 0;
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "عدد الايصالات اكبر من 50 وصل الرجاء اعادة ادخال عدد الايصالات",
+                                text: "عدد الايصالات اكبر من نطاق الايصالات الرجاء اعادة ادخال عدد الايصالات",
                                 cancellationToken: cancellationToken);
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
@@ -564,7 +569,7 @@ namespace CentersTakamol
                             {
                                 await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "الرجاء ادخال الأرقام الايصالات التالفة على الشكل: XXX,XXX,XXX,...",
+                                text: "الرجاء ادخال الأرقام الايصالات الملغاة على الشكل: XXX,XXX,XXX,...",
                                 cancellationToken: cancellationToken);
                                 receipt.Count += 3;
                             }else
@@ -584,7 +589,7 @@ namespace CentersTakamol
                             receipt.DamagedReceiptNum = 0;
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "عدد الايصالات اكبر من 50 وصل الرجاء اعادة ادخال عدد الايصالات",
+                                text: "عدد الايصالات اكبر من نطاق الايصالات الرجاء اعادة ادخال عدد الايصالات",
                                 cancellationToken: cancellationToken);
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
@@ -596,7 +601,7 @@ namespace CentersTakamol
                     }
                 case 7:
                     {
-                        receipt.FamilyReceiptList = await ListReceiptNumber(chatId, messageText, receipt.FamilyReceiptNum, cancellationToken);
+                        receipt.FamilyReceiptList = await ListReceiptNumber(chatId, messageText, receipt, receipt.FamilyReceiptNum, cancellationToken);
                         if (receipt.FamilyReceiptNum == receipt.FamilyReceiptList.Count)
                         {
                             if (receipt.VecationReceiptNum != 0)
@@ -628,14 +633,14 @@ namespace CentersTakamol
                     }
                 case 8:
                     {
-                        receipt.VactionReceiptList = await ListReceiptNumber(chatId, messageText, receipt.VecationReceiptNum, cancellationToken);
+                        receipt.VactionReceiptList = await ListReceiptNumber(chatId, messageText, receipt, receipt.VecationReceiptNum, cancellationToken);
                         if (receipt.VecationReceiptNum == receipt.VactionReceiptList.Count)
                         {
                             if (receipt.DamagedReceiptNum != 0)
                             {
                                 await TelegramBotClient.SendTextMessageAsync(
                                     chatId: chatId,
-                                    text: "الرجاء ادخال الأرقام الابصالات التالفة على الشكل: XXX,XXX,XXX,...",
+                                    text: "الرجاء ادخال الأرقام الابصالات الملغاة على الشكل: XXX,XXX,XXX,...",
                                     cancellationToken: cancellationToken);
                                 receipt.Count++;
                             }
@@ -652,9 +657,79 @@ namespace CentersTakamol
                     }
                 case 9:
                     {
-                        receipt.DamagedReceiptList = await ListReceiptNumber(chatId, messageText, receipt.DamagedReceiptNum, cancellationToken);
+                        receipt.DamagedReceiptList = await ListReceiptNumber(chatId, messageText, receipt, receipt.DamagedReceiptNum, cancellationToken);
                         if (receipt.DamagedReceiptNum == receipt.DamagedReceiptList.Count)
                         {
+                            List<int> list = new();
+                            List<int> error = new();
+                            foreach (var item in receipt.FamilyReceiptList!)
+                            {
+                               if(!list.Any(a=>a == item)){
+                                    list.Add(item);
+                                }
+                                else
+                                {
+                                    error.Add(item);
+                                }
+                            }
+                            foreach (var item in receipt.VactionReceiptList!)
+                            {
+                                if (!list.Any(a => a == item))
+                                {
+                                    list.Add(item);
+                                }
+                                else
+                                {
+                                    error.Add(item);
+                                }
+                            }
+                            foreach (var item in receipt.DamagedReceiptList!)
+                            {
+                                if (!list.Any(a => a == item))
+                                {
+                                    list.Add(item);
+                                }
+                                else
+                                {
+                                    error.Add(item);
+                                }
+                            }
+                            if (error.Count > 0)
+                            {
+                                string er = "";
+                                foreach (var e in error)
+                                {
+                                    er += $" {e} ";
+                                }
+                                await TelegramBotClient.SendTextMessageAsync(
+                                 chatId: chatId,
+                                 text: $"الايصال رقم {er} مكرر في اكثر من مكان\nالرجاء اعادة ادخال ارقام الايصالات ",
+                                 cancellationToken: cancellationToken);
+                                if (receipt.FamilyReceiptNum != 0)
+                                {
+                                    receipt.Count = 6;
+                                    await TelegramBotClient.SendTextMessageAsync(
+                               chatId: chatId,
+                               text: "الرجاء ادخال الأرقام الابصالات العائلية على الشكل: XXX,XXX,XXX,...",
+                               cancellationToken: cancellationToken);
+                                }
+                                else if (receipt.VecationReceiptNum != 0)
+                                {
+                                    receipt.Count = 7;
+                                    await TelegramBotClient.SendTextMessageAsync(
+                               chatId: chatId,
+                               text: "الرجاء ادخال الأرقام الابصالات المركبة على الشكل: XXX,XXX,XXX,...",
+                               cancellationToken: cancellationToken);
+                                }
+                                else
+                                {
+                                    receipt.Count = 8;
+                                    await TelegramBotClient.SendTextMessageAsync(
+                               chatId: chatId,
+                               text: "الرجاء ادخال الأرقام الايصالات الملغاة على الشكل: XXX,XXX,XXX,...",
+                               cancellationToken: cancellationToken);
+                                }
+                            }
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
                                 text: "الرجاء كتاب الملاحظات ان وجدت او كتابة لا يوجد",
@@ -681,9 +756,10 @@ namespace CentersTakamol
                         if (await IsRemittanceNumber(chatId, messageText, cancellationToken))
                         {
                             receipt.RemittanceNum = messageText;
+                            receipt.BookNumber = 1;
                             await TelegramBotClient.SendTextMessageAsync(
                                 chatId: chatId,
-                                text: "الرجاء ادخال عدد دفاتر الايصالات المرسلة",
+                                text: "الرجاء ادخال معلومات الايصالات",
                                 cancellationToken: cancellationToken);
                             receipt.Count++;
                         }
@@ -691,21 +767,10 @@ namespace CentersTakamol
                     }
                 case 1:
                     {
-                        receipt.BookNumber = await IsNumber(chatId, messageText, cancellationToken);
-                        if (receipt.BookNumber == null) { break; }
-                        await TelegramBotClient.SendTextMessageAsync(
-                            chatId: chatId,
-                            text: "الرجاء ادخال معلومات الدفتر رقم : 1",
-                            cancellationToken: cancellationToken);
-                        receipt.Count++;
-                        break;
-                    }
-                case 2:
-                    {
                         InserBook(chatId, receipt, messageText, cancellationToken);
                         break;
                     }
-                case 3:
+                case 2:
                     {
                         receipt.Price = await IsNumber(chatId, messageText, cancellationToken);
                         if (receipt.Price == null) { break; }
@@ -733,7 +798,7 @@ namespace CentersTakamol
                         }
                         break;
                     }
-                case 4:
+                case 3:
                     {
                         receipt.ErorrPriceNote = messageText;
                         await TelegramBotClient.SendTextMessageAsync(
@@ -1073,6 +1138,6 @@ namespace CentersTakamol
                 }
                 Console.WriteLine(message.Text);
             }
-        }
+        } 
     }
 }
