@@ -8,7 +8,7 @@ namespace CentersTakamol.Data
     {
         public static int FamilyPrice = 10000;
         public static int VactionPrice = 5500;
-        public static string TelegramBotId = "7191100562:AAFnhjnbD6I8EzPJWI9kFyLkDq19n-Z97So";
+        public static string TelegramBotId = "TelegramBotId";
         public static List<string> Option = new List<string> {
             "اضافة معلومات دفتر ايصالات","إضافة حوالة مالية"
         };
